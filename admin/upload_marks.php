@@ -1,0 +1,69 @@
+<?php
+include "../includes/layout.php";
+include "../includes/db.php";
+
+$success = $error = "";
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+  $student_id = intval($_POST['student_id']);
+  $subject = trim($_POST['subject']);
+  $marks_obtained = intval($_POST['marks_obtained']);
+  $max_marks = intval($_POST['max_marks']);
+
+  if ($student_id && $subject && $marks_obtained !== '' && $max_marks !== '') {
+    $stmt = $conn->prepare("INSERT INTO marks (student_id, subject, marks_obtained, max_marks) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param("isii", $student_id, $subject, $marks_obtained, $max_marks);
+    if ($stmt->execute()) {
+      $success = "Marks uploaded successfully.";
+    } else {
+      $error = "Failed to upload marks.";
+    }
+    $stmt->close();
+  } else {
+    $error = "All fields are required.";
+  }
+}
+
+$students = $conn->query("SELECT id, name FROM users WHERE role = 'student'");
+?>
+
+<h2 class="mb-4"><i class="bi bi-file-earmark-bar-graph-fill"></i> Upload Marks</h2>
+
+<?php if ($success): ?>
+  <div class="alert alert-success"><?= $success ?></div>
+<?php elseif ($error): ?>
+  <div class="alert alert-danger"><?= $error ?></div>
+<?php endif; ?>
+
+<form method="POST" class="card p-4 shadow-sm">
+  <div class="mb-3">
+    <label for="student_id" class="form-label">Student</label>
+    <select name="student_id" class="form-select" required>
+      <option value="">Select a student</option>
+      <?php while ($row = $students->fetch_assoc()): ?>
+        <option value="<?= $row['id'] ?>"><?= htmlspecialchars($row['name']) ?></option>
+      <?php endwhile; ?>
+    </select>
+  </div>
+
+  <div class="mb-3">
+    <label for="subject" class="form-label">Subject</label>
+    <input type="text" name="subject" class="form-control" required>
+  </div>
+
+  <div class="mb-3">
+    <label for="marks_obtained" class="form-label">Marks Obtained</label>
+    <input type="number" name="marks_obtained" class="form-control" required>
+  </div>
+
+  <div class="mb-3">
+    <label for="max_marks" class="form-label">Maximum Marks</label>
+    <input type="number" name="max_marks" class="form-control" required>
+  </div>
+
+  <button type="submit" class="btn btn-primary">
+    <i class="bi bi-cloud-upload-fill"></i> Upload
+  </button>
+</form>
+
+<?php include "../includes/footer.php"; ?>
